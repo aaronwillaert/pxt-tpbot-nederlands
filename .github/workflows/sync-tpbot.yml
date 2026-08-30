@@ -12,114 +12,114 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Nederlandse extensie
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Haal officiële TPBot-extensie op
+      - name: Haal officiële TPBot-code op
         run: |
           rm -rf /tmp/tpbot
           git clone --depth 1 https://github.com/elecfreaks/pxt-TPBot.git /tmp/tpbot
           rm -rf /tmp/tpbot/.git
           cp -a /tmp/tpbot/. ./
 
-      - name: Maak Nederlandse metadata en documentatie
+      - name: Vertaal zichtbare blokken rechtstreeks in main.ts
         shell: python
         run: |
-          import json
           from pathlib import Path
+          import json
 
-          p = Path('pxt.json')
-          data = json.loads(p.read_text(encoding='utf-8'))
+          p = Path('main.ts')
+          s = p.read_text(encoding='utf-8')
+
+          # De Engelse broncode blijft functioneel identiek; alleen teksten die
+          # leerlingen in de blokken zien worden vervangen.
+          replacements = {
+            'Set left wheel speed at %lspeed\\%| right wheel speed at %rspeed\\%': 'stel linkerwiel in op %lspeed\\%| rechterwiel op %rspeed\\%',
+            'Go %direc at speed %speed\\% for %time seconds': 'rijd %direc met snelheid %speed\\% gedurende %time seconden',
+            'Go %direc at speed %speed\\%': 'rijd %direc met snelheid %speed\\%',
+            'Stop the car immediately': 'stop',
+            '%side line sensor detected %state': '%side lijnsensor detecteert %state',
+            'Line sensor state is %state': 'lijnsensoren zijn %state',
+            'On %side| line sensor detected %state': 'wanneer de %side lijnsensor %state detecteert',
+            'Sonar distance unit %unit': 'meet afstand in %unit',
+            'Sonar distance %judge %dis cm': 'is de afstand %judge %dis cm?',
+            'Set headlight color to $color': 'stel koplampkleur in op $color',
+            'Set headlight color to R:%r G:%g B:%b': 'stel koplampkleur in op R:%r G:%g B:%b',
+            'Turn off the headlights': 'zet koplampen uit',
+            'Set 360° servo %servo speed to %speed \\%': 'stel servo %servo in op snelheid %speed \\%',
+            'Set %servoType servo %servo angle to %angle °': 'stel %servoType servo %servo in op %angle°',
+            'set left wheel speed %lspeed, right wheel speed %rspeed %unit': 'stel linkerwiel in op %lspeed, rechterwiel op %rspeed %unit',
+            'go %Direction %distance %DistanceUnit': 'rijd %Direction %distance %DistanceUnit',
+            'set length of the squares as %length %DistanceUnit': 'stel de lengte van een vak in op %length %DistanceUnit',
+            'go forward %cnt squares': 'rijd %cnt vakken vooruit',
+            'set car %TurnUnit for angle %angle': 'draai de TPBot %TurnUnit over %angle°',
+            'Forward': 'vooruit',
+            'Backward': 'achteruit',
+            'Left': 'links',
+            'Right': 'rechts',
+            'Black': 'zwart',
+            'White': 'wit',
+            'Play': 'afspelen',
+            'Happy': 'vrolijk',
+            'Red': 'rood',
+            'Green': 'groen',
+            'Blue': 'blauw',
+            'Cyan': 'cyaan',
+            'Magenta': 'magenta',
+            'Yellow': 'geel',
+            'WheelLeft': 'linkerwiel',
+            'WheelRight': 'rechterwiel',
+            'WheelALL': 'beide wielen',
+            'Angle': 'graden',
+            'Circle': 'omwentelingen',
+            'Leftsteering': 'naar links',
+            'Rightsteering': 'naar rechts',
+            'Stay_Leftsteering': 'links blijven sturen',
+            'Stay_Rightsteering': 'rechts blijven sturen',
+            'TPBot_Pro': 'TPBot Pro',
+            'cm/s': 'cm/s',
+            'inch/s': 'inch/s',
+            'inches': 'inch',
+        }
+
+          # Vervang uitsluitend waarden binnen //% block="..." of //%block="..."
+          import re
+          def translate_block(m):
+              prefix, text, suffix = m.group(1), m.group(2), m.group(3)
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              return prefix + text + suffix
+
+          s = re.sub(r'(//%\\s*block=")(.*?)(")', translate_block, s)
+          p.write_text(s, encoding='utf-8')
+
+          # Metadata
+          meta = Path('pxt.json')
+          data = json.loads(meta.read_text(encoding='utf-8'))
           data['name'] = 'pxt-tpbot-nederlands'
-          data['description'] = 'Nederlandstalige TPBot-extensie voor Microsoft MakeCode en micro:bit, gebaseerd op de TPBot-extensie van ELECFREAKS.'
-          p.write_text(json.dumps(data, ensure_ascii=False, indent=4) + '\n', encoding='utf-8')
+          data['description'] = 'Nederlandstalige TPBot-extensie voor Microsoft MakeCode en micro:bit.'
+          meta.write_text(json.dumps(data, ensure_ascii=False, indent=4) + '\\n', encoding='utf-8')
 
-          readme = '''# TPBot Nederlands\n\nNederlandstalige MakeCode-extensie voor de ELECFREAKS TPBot.\n\nDeze extensie is bedoeld voor gebruik in het basisonderwijs. De technische code is gebaseerd op de officiële [ELECFREAKS TPBot-extensie](https://github.com/elecfreaks/pxt-TPBot). De blokken en documentatie zijn vertaald en waar nodig herschreven naar duidelijke leerlingentaal.\n\n## Toevoegen aan MakeCode\n\nOpen [Microsoft MakeCode voor micro:bit](https://makecode.microbit.org/), kies **Geavanceerd → Extensies** en zoek naar `pxt-tpbot-nederlands` of voeg deze repository-URL toe:\n\n`https://github.com/aaronwillaert/pxt-tpbot-nederlands`\n\n## Voorbeelden\n\n```typescript\nTPBot.headlightColor(0xff0000)\nTPBot.setTravelSpeed(TPBot.DriveDirection.Forward, 50)\nbasic.pause(1000)\nTPBot.stopCar()\n```\n\n## Voor leerkrachten\n\nDe extensie behoudt de functionaliteit van de officiële TPBot-code. Alleen de zichtbare blokteksten, Nederlandstalige documentatie en extensiemetadata zijn aangepast. Controleer bij een nieuwe officiële TPBot-release of de code opnieuw moet worden gesynchroniseerd.\n\n## Bron en licentie\n\nGebaseerd op de officiële TPBot-extensie van ELECFREAKS. De oorspronkelijke extensie wordt onder de MIT-licentie verspreid. Zie `LICENSE` en de bronrepository voor de oorspronkelijke licentievoorwaarden.\n'''
-          Path('README.md').write_text(readme, encoding='utf-8')
+          # Laat MakeCode niet afhankelijk zijn van de oude vertaalbestanden.
+          loc = Path('_locales/nl')
+          if loc.exists():
+              for f in loc.glob('*.json'):
+                  f.unlink()
 
-      - name: Verbeter Nederlandse blokvertalingen
+      - name: Controleer Engelse blokteksten
         shell: python
         run: |
-          import json
           from pathlib import Path
+          import re
+          s = Path('main.ts').read_text(encoding='utf-8')
+          blocks = re.findall(r'//%\\s*block="(.*?)"', s)
+          print('Aantal blokken:', len(blocks))
+          for b in blocks:
+              print(b)
 
-          loc = Path('_locales/nl')
-          loc.mkdir(parents=True, exist_ok=True)
-          strings = {
-            'TPBot.DriveDirection.Backward|block': 'achteruit',
-            'TPBot.DriveDirection.Forward|block': 'vooruit',
-            'TPBot.DriveDirection.Left|block': 'links',
-            'TPBot.DriveDirection.Right|block': 'rechts',
-            'TPBot.LineSide.Left|block': 'links',
-            'TPBot.LineSide.Right|block': 'rechts',
-            'TPBot.LineState.Black|block': 'zwart',
-            'TPBot.LineState.White|block': 'wit',
-            'TPBot.MbEvents.Black|block': 'zwart',
-            'TPBot.MbEvents.White|block': 'wit',
-            'TPBot.MbPins.Left|block': 'links',
-            'TPBot.MbPins.Right|block': 'rechts',
-            'TPBot.ServoList.S1|block': 'S1',
-            'TPBot.ServoList.S2|block': 'S2',
-            'TPBot.ServoList.S3|block': 'S3',
-            'TPBot.ServoList.S4|block': 'S4',
-            'TPBot.SonarUnit.Centimeters|block': 'cm',
-            'TPBot.SonarUnit.Inches|block': 'inch',
-            'TPBot.Sonarjudge.Greater|block': '>',
-            'TPBot.Sonarjudge.Less|block': '<',
-            'TPBot.TrackingState.L_R_line|block': '● ●',
-            'TPBot.TrackingState.L_R_unline|block': '◌ ◌',
-            'TPBot.TrackingState.L_line_R_unline|block': '● ◌',
-            'TPBot.TrackingState.L_unline_R_line|block': '◌ ●',
-            'TPBot.SpeedUnit.Cm_s|block': 'cm/s',
-            'TPBot.SpeedUnit.Inch_s|block': 'inch/s',
-            'TPBot.Direction.Forward|block': 'vooruit',
-            'TPBot.Direction.Backward|block': 'achteruit',
-            'TPBot.Wheel.WheelLeft|block': 'linkerwiel',
-            'TPBot.Wheel.WheelRight|block': 'rechterwiel',
-            'TPBot.Wheel.WheelALL|block': 'alle wielen',
-            'TPBot.AngleUnits.Angle|block': 'graden',
-            'TPBot.AngleUnits.Circle|block': 'omwentelingen',
-            'TPBot.TurnUnit.Leftsteering|block': 'naar links',
-            'TPBot.TurnUnit.Rightsteering|block': 'naar rechts',
-            'TPBot.TurnUnit.Stay_Leftsteering|block': 'links blijven sturen',
-            'TPBot.TurnUnit.Stay_Rightsteering|block': 'rechts blijven sturen',
-            'TPBot.TurnAngleUnit.T45|block': '45°',
-            'TPBot.TurnAngleUnit.T90|block': '90°',
-            'TPBot.TurnAngleUnit.T135|block': '135°',
-            'TPBot.TurnAngleUnit.T180|block': '180°',
-            'TPBot.DistanceUnit.Cm|block': 'cm',
-            'TPBot.DistanceUnit.Inch|block': 'inch',
-            'TPBot.headlightClose|block': 'koplampen uit',
-            'TPBot.headlightColor|block': 'stel koplampkleur in op $color',
-            'TPBot.headlightRGB|block': 'stel koplampkleur in op R:%r G:%g B:%b',
-            'TPBot.setServo360|block': 'stel snelheid van servo %servo in op %speed \\%',
-            'TPBot.setServo|block': 'stel %servoType servo %servo in op %angle°',
-            'TPBot.setTravelSpeed|block': 'rijd %direc met snelheid %speed\\%',
-            'TPBot.setTravelTime|block': 'rijd %direc met snelheid %speed\\% gedurende %time seconden',
-            'TPBot.setWheels|block': 'stel linkerwiel in op %lspeed\\% en rechterwiel op %rspeed\\%',
-            'TPBot.sonarJudge|block': 'is de sonarafstand %judge %dis cm?',
-            'TPBot.sonarReturn|block': 'meet sonarafstand in %unit',
-            'TPBot.stopCar|block': 'stop onmiddellijk',
-            'TPBot.trackEvent|block': 'wanneer %side lijnsensor %state detecteert',
-            'TPBot.trackLine|block': 'lijnsensorstatus is %state',
-            'TPBot.trackSide|block': '%side lijnsensor detecteert %state',
-            'TPBot.pidSpeedControl|block': 'stel linkerwiel op %lspeed en rechterwiel op %rspeed %unit',
-            'TPBot.pidRunDistance|block': 'rijd %Direction %distance %DistanceUnit',
-            'TPBot.pidRunAngle|block': 'laat %Wheel %angle %AngleUnits draaien',
-            'TPBot.pidRunSteering|block': 'laat de TPBot %TurnUnit draaien over %angle°',
-            'TPBot.pidSetSpeed|block': 'stel PID-snelheid in op %speed %unit',
-            'TPBot.pidBlockSet|block': 'stel bloklengte in op %length %DistanceUnit',
-            'TPBot.pidRunBlock|block': 'rijd %cnt blokken vooruit',
-            'TPBot|block': 'TPBot',
-            '{id:category}TPBot': 'TPBot',
-            '{id:subcategory}PID': 'PID-regeling'
-          }
-          (loc / 'pxt-TPBot-strings.json').write_text(json.dumps(strings, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-
-      - name: Commit opgebouwde extensie
+      - name: Commit Nederlandse versie
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Bouw Nederlandse TPBot-extensie" || echo "Geen wijzigingen"
+          git commit -m "Gebruik Nederlandse blokteksten rechtstreeks in main.ts" || echo "Geen wijzigingen"
           git push
