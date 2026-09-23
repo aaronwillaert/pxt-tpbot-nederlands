@@ -456,7 +456,7 @@ namespace TPBot {
      */
     //% subcategory="PID"
     //% weight=190
-    //% block="zet auto %TurnUnit voor hoek %angle"
+    //% block="zet auto %TurnUnit hoek %angle"
     //% angle.min=0 angle.max=360
     export function pidRunSteering(turn: TurnUnit, angle: number): void {
         TPBotV2.pidRunSteering(turn, angle);
@@ -469,7 +469,7 @@ namespace TPBot {
      */
     //% subcategory="PID"
     //% weight=215
-    //% block="zet de snelheid van de pid-besturing op %speed %unit"
+    //% block="zet de snelheid op %speed %unit"
     export function pidSetSpeed(speed: number , unit: SpeedUnit): void {
         TPBotV2.pidSetSpeed(speed,unit);
     }
